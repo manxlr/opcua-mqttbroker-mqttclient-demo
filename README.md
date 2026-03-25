@@ -1,4 +1,4 @@
-# CODESYS OPC UA -> MQTT -> Real-time Dashboard (Community POC)
+# CODESYS OPC UA -> MQTT -> Real-time Dashboard (Community Demo)
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](#)
 [![OPC UA](https://img.shields.io/badge/OPC%20UA-Client%2FServer-brightgreen)](#)
@@ -7,76 +7,89 @@
 
 ## Overview
 
-This repository demonstrates an end-to-end proof-of-concept data pipeline:
+This repository is a community-friendly proof-of-concept pipeline:
 
-1. **CODESYS PLC** exposes variables via **OPC UA**
-2. **Python bridge** reads those OPC UA nodes and publishes JSON messages to **MQTT** topics
-3. An embedded **MQTT broker (aMQTT)** serves MQTT to multiple clients
-4. A **Flask** web UI (glass/neon) subscribes over **MQTT over WebSocket** and plots live charts
-5. Optional **MQTT clients** (terminal simulator + desktop GUI) also subscribe and plot/export
-
-Screenshots are optional placeholders; add your own images under `Screenshots/`.
+1. CODESYS PLC exposes variables via OPC UA
+2. A Python bridge reads OPC UA nodes and publishes JSON messages to MQTT
+3. An embedded MQTT broker (aMQTT) serves MQTT to multiple clients
+4. A Flask web UI subscribes over MQTT (WebSocket) and plots live charts
+5. Optional MQTT clients (terminal + desktop GUI) subscribe and plot/export
 
 ## Screenshots
 
-Place images here:
-- `Screenshots/screenshot-dashboard.png`
-- `Screenshots/screenshot-admin-browse.png`
-- `Screenshots/screenshot-terminal-simulator.png`
-- `Screenshots/screenshot-desktop-gui.png`
+These PNGs are included in `Screenshots/`.
 
-Then update links in this README.
+- Dashboard: `Screenshots/OPC_UA_and_MQTT_BROKER_Dashboard.png`
+- Admin browse page: `Screenshots/OPC_UA_and_MQTT_BROKER_Admin_Page.png`
+- Variable selection (CODESYS): `Screenshots/OPC_UA_Variables_Selection_CODESYS.png`
+- MQTT client (terminal): `Screenshots/MQTT_Client.png`
+
+(Optionally add more screenshots, plus:
+- `Screenshots/flow-diagram.png`
+- `Screenshots/repo-icon.png`)
 
 ## Architecture (high level)
 
 ```mermaid
 flowchart LR
   subgraph plc[CODESYS]
-    opc[OPC UA Server :4840]
+    srv[OPC UA Server :4840]
   end
 
-  subgraph python[Python demo (bridge + UI)]
-    bridge[OPC UA client (asyncua.sync) + MQTT publisher]
-    flask[Flask web app (dashboard + admin)]
-    broker[aMQTT broker (TCP 1883 + WS 9001)]
+  subgraph bridge[Python Bridge]
+    cli[OPC UA Client (asyncua.sync)]
+    pub[Publish JSON to MQTT]
   end
 
-  subgraph clients[MQTT Clients]
-    web[Browser dashboard (mqtt.js)]
-    term[Terminal simulator]
-    gui[Desktop GUI plots]
-    opc_examples[Original Python OPC examples]
+  subgraph broker[aMQTT Broker]
+    tcp[MQTT TCP 1883]
+    ws[MQTT WebSocket 9001]
   end
 
-  opc -->|read values / browse| bridge
-  bridge -->|publish JSON to topics: opc/<signal>| broker
-  broker -->|MQTT over WebSocket| web
-  broker -->|MQTT TCP| term
-  broker -->|MQTT TCP| gui
+  subgraph ui[MQTT Clients]
+    web[Flask Dashboard (MQTT over WS)]
+    term[Terminal Simulator]
+    gui[Desktop GUI Plots]
+  end
 
-  opc_examples -->|optional: test OPC directly| opc
+  srv --> cli --> pub --> ws --> web
+  pub --> tcp --> term
+  pub --> tcp --> gui
 ```
 
 ## Default endpoints / topic format
 
-- OPC UA server (default, used by the Python bridge): `opc.tcp://localhost:4840`
-- MQTT broker ports (embedded):
+- OPC UA server (used by the Python bridge): `opc.tcp://localhost:4840`
+- Embedded MQTT broker (in this demo):
   - MQTT TCP: `127.0.0.1:1883`
-  - MQTT WebSocket (for browser): `127.0.0.1:9001`
-- MQTT topic convention used by the bridge:
+  - MQTT WebSocket (browser): `127.0.0.1:9001`
+- MQTT topics published by the bridge:
   - `opc/<signal_id>`
-- JSON payload (example):
-  - `{"ts": 1710000000000, "id": "lrAxisPosition", "node_id": "ns=4;s=...", "value": 12.34}`
+- Example JSON payload:
+  - {"ts": 1710000000000, "id": "lrAxisPosition", "node_id": "ns=4;s=...", "value": 12.34}
 
-## Requirements
+## 1) CoDeSys Project Setup
 
-- Windows recommended (this project runs on your machine).
-- CODESYS OPC UA server running (simulation or real PLC).
-- Python venv (recommended).
+Copy/paste instructions for the CoDeSys OPC UA server example.
 
-## Quick start
+1. Download/obtain the original project from this repository's included `CoDeSys/` folder.
+2. Open Project: Open the `CoDeSys_Projects/OPC-UA_Server Example Project - Start.project` in your CoDeSys Development System.
+   - This project contains a simple program (`PLC_PRG`) controlling a virtual SoftMotion axis (`Axis1`) and a Global Variable List (`OPC_GVL`) to hold data for OPC UA.
+3. (Follow Video for Setup): The video tutorial walks through these steps using the Start project:
+   - Symbol Configuration: Adding a 'Symbol Configuration' object, building the project, selecting `GVL_AxisData` (or specific variables inside it) for exposure, and enabling "Support OPC UA features".
+   - Disable OPC UA Authentication: Double-clicking 'Device', going to the 'Communication Settings' tab, clicking on 'Device', and then on 'Change Runtime Security Policy' checking 'Allow anonymous login'. Note the endpoint URL (usually `opc.tcp://localhost:4840`).
+   - Reference Project: `OPC-UA_Server Example Project - Complete.project` has the Symbol Configuration and OPC UA server already set up for comparison.
+4. Run Simulation:
+   - Start the local PLC (Right Click on CoDeSys tray -> Start PLC).
+   - Login (Online -> Login).
+   - Create user authentication and login if prompted.
+   - Download the project if prompted.
+   - Start the PLC (Debug -> Start or F5).
+   - You can manually toggle variables like `StartButton` or `StopButton` in `PLC_PRG` to see the simulated axis move and `GVL_AxisData.lrAxisPosition` update.
 
-From this repository root:
+Note: the device name string inside your NodeIds may differ from the simulation default. Use the admin page's browse feature to pick the correct NodeIds.
+
+## 2) Run the demo (Flask + embedded broker + OPC->MQTT bridge)
 
 1. Create venv + install dependencies
 
@@ -87,7 +100,7 @@ python -m venv .venv
 pip install -r requirements-demo.txt
 ```
 
-2. Start the demo (starts embedded broker + bridge + Flask)
+2. Start the demo
 
 ```bash
 python demo_poc\run.py
@@ -95,74 +108,65 @@ python demo_poc\run.py
 
 3. Open the UI
 
-- Dashboard: `http://127.0.0.1:5050/`
-- Bridge admin: `http://127.0.0.1:5050/admin`
+- Dashboard: http://127.0.0.1:5050/
+- Bridge admin: http://127.0.0.1:5050/admin
 
 On the dashboard:
-- WebSocket URL: `ws://127.0.0.1:9001`
-- Subscribe pattern: `opc/#`
+- WebSocket URL: ws://127.0.0.1:9001
+- Subscribe pattern: opc/#
 
 On the admin page:
-- Click `Fetch variables from OPC (browse)` to populate the list of OPC nodes from your CODESYS global folder.
-- Click `Save & restart bridge`.
+- Use "Fetch variables from OPC (browse)" and then "Save & restart bridge".
 
-## MQTT client options
+## 3) MQTT client options
 
 With the demo running:
 
 ### Terminal MQTT simulator
 
 ```bash
-.
-.venv\Scripts\python demo_poc\mqtt_sim_client.py
+python demo_poc\mqtt_sim_client.py
 ```
 
 ### Desktop GUI (plots + export)
 
 ```bash
-.
-.venv\Scripts\python demo_poc\mqtt_gui_client.py
+python demo_poc\mqtt_gui_client.py
 ```
 
-It connects to MQTT TCP `127.0.0.1:1883` and subscribes to `opc/#` by default.
+Both subscribe to MQTT TCP `127.0.0.1:1883` and default topic filter `opc/#`.
 
-## Original OPC UA Python examples
+## Image generation prompts (for community polish)
 
-Folder: `Python_Script/`
+You can generate the following PNGs and place them in `Screenshots/`:
 
-These scripts demonstrate direct OPC UA reading with `asyncua.sync`:
-- `connect_to_server.py`
-- `plot_data_from_server.py`
-- `plot_multiple_data_from_server.py`
+1. Flow diagram
+   - Filename: `Screenshots/flow-diagram.png`
+   - Prompt:
+     "Create a clean modern vector-style flow diagram (transparent background) showing 'CODESYS PLC (OPC UA server) -> Python OPC UA bridge -> Embedded MQTT broker (aMQTT) -> MQTT clients (Flask dashboard via WebSocket, Terminal sim, Desktop GUI plots)'. Include small icon-like boxes for OPC UA, Python, MQTT, Flask, and charts. Use a dark theme with neon cyan/pink accents. Add short labels: 'opc.tcp://localhost:4840', 'MQTT TCP 1883', 'MQTT WS 9001', and topics 'opc/<signal_id>'. Ensure it looks good at 1400x800, readable fonts, and no tiny text."
 
-## Included CoDeSys project export
+2. Repository icon
+   - Filename: `Screenshots/repo-icon.png`
+   - Prompt:
+     "Design a single square repository icon (transparent background) with a glass-neon aesthetic: a combined OPC UA + MQTT symbol. Use a simple abstract node graph or two connected endpoints. Add neon cyan outline and a magenta accent. Include minimal text-free design so it scales well. Output at 512x512."
 
-Folder: `CoDeSys/`
+## Acknowledgements / Credits
 
-This repository includes an exported CODESYS project bundle for the OPC UA server example.
-In CODESYS:
-- Open the file `CoDeSys/OPC-UA_Server Example Project - Start.project`
-- Build the project
-- Start PLC simulation or run on real PLC
-- Ensure OPC UA variables are exposed (anonymous allowed, SecurityPolicy None) like in your original setup
+This community demo is inspired by:
+- https://github.com/mn-automation-academy/tutorial-codesys-opc-ua-with-python
 
-The bridge admin supports browsing variables so you do not have to hardcode NodeIds.
+Additional technologies used:
+- aMQTT (embedded broker)
+- asyncua (OPC UA client sync wrapper: asyncua.sync)
+- paho-mqtt (MQTT publish/subscribe)
+- mqtt.js + Chart.js (web dashboard)
 
-## Acknowledgements
-
-- CODESYS OPC UA server example project (exported from your CoDeSys workspace)
-- aMQTT: embedded MQTT broker used in this demo (`amqtt`)
-- asyncua: OPC UA Python communication (`asyncua`, sync wrapper `asyncua.sync`)
-- paho-mqtt: MQTT publishing/subscribing in Python (`paho-mqtt`)
-- MQTT.js: browser MQTT client (`mqtt.js`)
-- Chart.js: plotting library in the web dashboard
-
-## Roadmap / TODO (community-friendly)
+## Roadmap / TODO
 
 - [ ] Test MQTT auth / credentials end-to-end (broker + clients)
-- [ ] Test against a real PLC (not only simulation)
-- [ ] Add more GVL folders/symbols and re-browse + re-test the bridge
-- [ ] Harden MQTT transport (TLS if you choose to expose beyond localhost)
+- [ ] Test on real PLC hardware (not only simulation)
+- [ ] Add more GVL folders/symbols, re-browse and re-test the bridge
+- [ ] Harden MQTT transport (TLS if you expose beyond localhost)
 
 ## License
 
