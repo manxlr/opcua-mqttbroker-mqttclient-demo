@@ -1,4 +1,4 @@
-# CODESYS OPC UA -> MQTT -> Real-time Dashboard (Community Demo)
+# <img src="Screenshots/repo-icon.png" alt="Repository icon" width="40" />CODESYS OPC UA -> OPC UA Client with MQTT Broker Integration -> Real-time Dashboard (Community Demo)
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](#)
 [![OPC UA](https://img.shields.io/badge/OPC%20UA-Client%2FServer-brightgreen)](#)
@@ -15,12 +15,10 @@ This repository is a community-friendly proof-of-concept pipeline:
 4. A Flask web UI subscribes over MQTT (WebSocket) and plots live charts
 5. Optional MQTT clients (terminal + desktop GUI) subscribe and plot/export
 
-<img src="Screenshots/repo-icon.png" alt="Repository icon" width="64" />
+
 
 ## Architecture
-
 ![End-to-end pipeline](Screenshots/flow-diagram.png)
-
 High-level flow:
 - **CODESYS PLC** exposes variables via **OPC UA**
 - **Python bridge** reads configured nodes and publishes JSON to MQTT topics in the form `opc/<signal_id>`
@@ -120,22 +118,8 @@ This project is licensed under the MIT License. Feel free to use, modify, and di
 ## 🙏 Acknowledgements
 - [mn-automation-academy/tutorial-codesys-opc-ua-with-python](https://github.com/mn-automation-academy/tutorial-codesys-opc-ua-with-python)
 
-## 💡 This project is ideal for local telemetry visualization experiments—connecting OPC UA → MQTT → dashboards while keeping your data on your own machine.
-
 ## 📧 Contact
 For any questions, suggestions, or feedback, please reach out:
 
 - Email: nszeeshankhalid@gmail.com
 - GitHub: https://github.com/manxlr
-
-## 🔗 Links
-- GitHub Repository: https://github.com/manxlr/opcua-mqttbroker-mqttclient-demo
-
-## 💖 Donations
-If you find this project helpful and would like to support its continued development, you can donate using the following cryptocurrency addresses:
-
-- Ethereum (ETH): 0x23774348bc491Ff70F39c63f39B0e542a59b5B14
-- Bitcoin (BTC): bc1qp7wltg8frvecuujjs9f3ck28r0s0h0qzld2fu6
-- Dogecoin (DOGE): DTbwxMs4wenN2kUea77rHPQ8nbJrSk4o7D
-
-Your support is greatly appreciated and helps maintain and improve open-source projects!
