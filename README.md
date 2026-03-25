@@ -15,31 +15,7 @@ This repository is a community-friendly proof-of-concept pipeline:
 4. A Flask web UI subscribes over MQTT (WebSocket) and plots live charts
 5. Optional MQTT clients (terminal + desktop GUI) subscribe and plot/export
 
-## Screenshots
-
-### Flask Dashboard (Live Plot)
-<img src="Screenshots/OPC_UA_and_MQTT_BROKER_Dashboard.png" alt="Flask dashboard live plot" width="900" />
-*Flask dashboard live chart (subscribing to MQTT over WebSocket).*
-
-### Bridge Admin (OPC UA Browse + Config)
-<img src="Screenshots/OPC_UA_and_MQTT_BROKER_Admin_Page.png" alt="Bridge admin page" width="900" />
-*Bridge admin page for browsing OPC UA nodes and configuring which variables to publish.*
-
-### CoDeSys Symbol Configuration
-<img src="Screenshots/OPC_UA_Variables_Selection_CODESYS.png" alt="CoDeSys symbol configuration" width="900" />
-*CoDeSys symbol/configuration exposing variables (e.g. `GVL_AxisData`) for OPC UA access.*
-
-### Terminal MQTT Simulator
-<img src="Screenshots/MQTT_Client.png" alt="Terminal MQTT simulator" width="900" />
-*Terminal MQTT subscriber printing JSON payloads.*
-
-### Architecture Diagram
-<img src="Screenshots/flow-diagram.png" alt="End-to-end architecture diagram" width="900" />
-*End-to-end pipeline: OPC UA → Python bridge → MQTT broker → clients.*
-
-### Repo Icon
-<img src="Screenshots/repo-icon.png" alt="Repository icon" width="300" />
-*Community repo icon (OPC UA + MQTT).*
+<img src="Screenshots/repo-icon.png" alt="Repository icon" width="64" />
 
 ## Architecture
 
@@ -131,20 +107,6 @@ python demo_poc\mqtt_gui_client.py
 
 Both subscribe to MQTT TCP `127.0.0.1:1883` and default topic filter `opc/#`.
 
-## Image generation prompts (for community polish)
-
-You can generate the following PNGs and place them in `Screenshots/`:
-
-1. Flow diagram
-   - Filename: `Screenshots/flow-diagram.png`
-   - Prompt:
-     "Create a clean modern vector-style flow diagram (transparent background) showing 'CODESYS PLC (OPC UA server) -> Python OPC UA bridge -> Embedded MQTT broker (aMQTT) -> MQTT clients (Flask dashboard via WebSocket, Terminal sim, Desktop GUI plots)'. Include small icon-like boxes for OPC UA, Python, MQTT, Flask, and charts. Use a dark theme with neon cyan/pink accents. Add short labels: 'opc.tcp://localhost:4840', 'MQTT TCP 1883', 'MQTT WS 9001', and topics 'opc/<signal_id>'. Ensure it looks good at 1400x800, readable fonts, and no tiny text."
-
-2. Repository icon
-   - Filename: `Screenshots/repo-icon.png`
-   - Prompt:
-     "Design a single square repository icon (transparent background) with a glass-neon aesthetic: a combined OPC UA + MQTT symbol. Use a simple abstract node graph or two connected endpoints. Add neon cyan outline and a magenta accent. Include minimal text-free design so it scales well. Output at 512x512."
-
 ## Roadmap / TODO
 
 - [ ] Test MQTT auth / credentials end-to-end (broker + clients)
@@ -157,9 +119,6 @@ This project is licensed under the MIT License. Feel free to use, modify, and di
 
 ## 🙏 Acknowledgements
 - [mn-automation-academy/tutorial-codesys-opc-ua-with-python](https://github.com/mn-automation-academy/tutorial-codesys-opc-ua-with-python)
-- LM Studio
-- LangChain
-- Streamlit Authenticator
 
 ## 💡 This project is ideal for local telemetry visualization experiments—connecting OPC UA → MQTT → dashboards while keeping your data on your own machine.
 
