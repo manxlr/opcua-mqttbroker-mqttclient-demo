@@ -17,45 +17,40 @@ This repository is a community-friendly proof-of-concept pipeline:
 
 ## Screenshots
 
-These PNGs are included in `Screenshots/`.
+### Flask Dashboard (Live Plot)
+<img src="Screenshots/OPC_UA_and_MQTT_BROKER_Dashboard.png" alt="Flask dashboard live plot" width="900" />
+*Flask dashboard live chart (subscribing to MQTT over WebSocket).*
 
-- Dashboard: `Screenshots/OPC_UA_and_MQTT_BROKER_Dashboard.png`
-- Admin browse page: `Screenshots/OPC_UA_and_MQTT_BROKER_Admin_Page.png`
-- Variable selection (CODESYS): `Screenshots/OPC_UA_Variables_Selection_CODESYS.png`
-- MQTT client (terminal): `Screenshots/MQTT_Client.png`
+### Bridge Admin (OPC UA Browse + Config)
+<img src="Screenshots/OPC_UA_and_MQTT_BROKER_Admin_Page.png" alt="Bridge admin page" width="900" />
+*Bridge admin page for browsing OPC UA nodes and configuring which variables to publish.*
 
-(Optionally add more screenshots, plus:
-- `Screenshots/flow-diagram.png`
-- `Screenshots/repo-icon.png`)
+### CoDeSys Symbol Configuration
+<img src="Screenshots/OPC_UA_Variables_Selection_CODESYS.png" alt="CoDeSys symbol configuration" width="900" />
+*CoDeSys symbol/configuration exposing variables (e.g. `GVL_AxisData`) for OPC UA access.*
 
-## Architecture (high level)
+### Terminal MQTT Simulator
+<img src="Screenshots/MQTT_Client.png" alt="Terminal MQTT simulator" width="900" />
+*Terminal MQTT subscriber printing JSON payloads.*
 
-```mermaid
-flowchart LR
-  subgraph plc[CODESYS]
-    srv[OPC UA Server :4840]
-  end
+### Architecture Diagram
+<img src="Screenshots/flow-diagram.png" alt="End-to-end architecture diagram" width="900" />
+*End-to-end pipeline: OPC UA → Python bridge → MQTT broker → clients.*
 
-  subgraph bridge[Python Bridge]
-    cli[OPC UA Client (asyncua.sync)]
-    pub[Publish JSON to MQTT]
-  end
+### Repo Icon
+<img src="Screenshots/repo-icon.png" alt="Repository icon" width="300" />
+*Community repo icon (OPC UA + MQTT).*
 
-  subgraph broker[aMQTT Broker]
-    tcp[MQTT TCP 1883]
-    ws[MQTT WebSocket 9001]
-  end
+## Architecture
 
-  subgraph ui[MQTT Clients]
-    web[Flask Dashboard (MQTT over WS)]
-    term[Terminal Simulator]
-    gui[Desktop GUI Plots]
-  end
+![End-to-end pipeline](Screenshots/flow-diagram.png)
 
-  srv --> cli --> pub --> ws --> web
-  pub --> tcp --> term
-  pub --> tcp --> gui
-```
+High-level flow:
+- **CODESYS PLC** exposes variables via **OPC UA**
+- **Python bridge** reads configured nodes and publishes JSON to MQTT topics in the form `opc/<signal_id>`
+- An embedded **MQTT broker (aMQTT)** distributes messages to all subscribers
+- **Flask dashboard** subscribes via MQTT over WebSocket and renders live charts + export
+- Optional **terminal/desktop MQTT clients** subscribe over MQTT TCP and plot/export locally
 
 ## Default endpoints / topic format
 
@@ -75,7 +70,7 @@ Copy/paste instructions for the CoDeSys OPC UA server example.
 1. Download/obtain the original project from this repository's included `CoDeSys/` folder.
 2. Open Project: Open the `CoDeSys_Projects/OPC-UA_Server Example Project - Start.project` in your CoDeSys Development System.
    - This project contains a simple program (`PLC_PRG`) controlling a virtual SoftMotion axis (`Axis1`) and a Global Variable List (`OPC_GVL`) to hold data for OPC UA.
-3. (Follow Video for Setup): The video tutorial walks through these steps using the Start project:
+3. (Follow Video for Setup): The video tutorial walks through these steps using the Start project: [YouTube video](https://www.youtube.com/watch?v=E9dnnb-EgZ4)
    - Symbol Configuration: Adding a 'Symbol Configuration' object, building the project, selecting `GVL_AxisData` (or specific variables inside it) for exposure, and enabling "Support OPC UA features".
    - Disable OPC UA Authentication: Double-clicking 'Device', going to the 'Communication Settings' tab, clicking on 'Device', and then on 'Change Runtime Security Policy' checking 'Allow anonymous login'. Note the endpoint URL (usually `opc.tcp://localhost:4840`).
    - Reference Project: `OPC-UA_Server Example Project - Complete.project` has the Symbol Configuration and OPC UA server already set up for comparison.
@@ -150,17 +145,6 @@ You can generate the following PNGs and place them in `Screenshots/`:
    - Prompt:
      "Design a single square repository icon (transparent background) with a glass-neon aesthetic: a combined OPC UA + MQTT symbol. Use a simple abstract node graph or two connected endpoints. Add neon cyan outline and a magenta accent. Include minimal text-free design so it scales well. Output at 512x512."
 
-## Acknowledgements / Credits
-
-This community demo is inspired by:
-- https://github.com/mn-automation-academy/tutorial-codesys-opc-ua-with-python
-
-Additional technologies used:
-- aMQTT (embedded broker)
-- asyncua (OPC UA client sync wrapper: asyncua.sync)
-- paho-mqtt (MQTT publish/subscribe)
-- mqtt.js + Chart.js (web dashboard)
-
 ## Roadmap / TODO
 
 - [ ] Test MQTT auth / credentials end-to-end (broker + clients)
@@ -168,6 +152,31 @@ Additional technologies used:
 - [ ] Add more GVL folders/symbols, re-browse and re-test the bridge
 - [ ] Harden MQTT transport (TLS if you expose beyond localhost)
 
-## License
+## 📃 License
+This project is licensed under the MIT License. Feel free to use, modify, and distribute.
 
-MIT License (see `LICENSE`).
+## 🙏 Acknowledgements
+- [mn-automation-academy/tutorial-codesys-opc-ua-with-python](https://github.com/mn-automation-academy/tutorial-codesys-opc-ua-with-python)
+- LM Studio
+- LangChain
+- Streamlit Authenticator
+
+## 💡 This project is ideal for local telemetry visualization experiments—connecting OPC UA → MQTT → dashboards while keeping your data on your own machine.
+
+## 📧 Contact
+For any questions, suggestions, or feedback, please reach out:
+
+- Email: nszeeshankhalid@gmail.com
+- GitHub: https://github.com/manxlr
+
+## 🔗 Links
+- GitHub Repository: https://github.com/manxlr/opcua-mqttbroker-mqttclient-demo
+
+## 💖 Donations
+If you find this project helpful and would like to support its continued development, you can donate using the following cryptocurrency addresses:
+
+- Ethereum (ETH): 0x23774348bc491Ff70F39c63f39B0e542a59b5B14
+- Bitcoin (BTC): bc1qp7wltg8frvecuujjs9f3ck28r0s0h0qzld2fu6
+- Dogecoin (DOGE): DTbwxMs4wenN2kUea77rHPQ8nbJrSk4o7D
+
+Your support is greatly appreciated and helps maintain and improve open-source projects!
