@@ -1,0 +1,14 @@
+# Embedded aMQTT broker — localhost only (POC). Change bind to 0.0.0.0 for LAN-only demos.
+listeners:
+  default:
+    type: tcp
+    bind: 127.0.0.1:1883
+  ws:
+    type: ws
+    bind: 127.0.0.1:9001
+timeout_disconnect_delay: 0
+plugins:
+  amqtt.plugins.authentication.AnonymousAuthPlugin:
+    allow_anonymous: true
+  amqtt.plugins.sys.broker.BrokerSysPlugin:
+    sys_interval: 20

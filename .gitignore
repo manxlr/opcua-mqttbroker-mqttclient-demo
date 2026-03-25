@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg/
+*.log
+
+# Virtual environments
+.vvenv/
+venv/
+.venv/
+
+# Local runtime config
+config.json
+
+# Demo artifacts
+*.csv
+*.json
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+

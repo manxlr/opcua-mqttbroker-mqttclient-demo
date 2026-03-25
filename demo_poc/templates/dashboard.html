@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OPC · MQTT Live</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard/theme.css') }}" />
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="wrap">
+    <header class="hero glass">
+      <div>
+        <h1>Live signals</h1>
+        <p class="sub">MQTT over WebSocket · glass / neon POC</p>
+      </div>
+      <div class="status-pill" id="connPill">Disconnected</div>
+    </header>
+
+    <section class="panel glass">
+      <h2>Connection</h2>
+      <div class="row">
+        <label>WebSocket URL (MQTT in the browser — not OPC)</label>
+        <input type="text" id="wsUrl" value="ws://127.0.0.1:9001" spellcheck="false" />
+      </div>
+      <p class="hint">Use <code>ws://127.0.0.1:9001</code> when this demo runs on this PC. The embedded broker listens there for MQTT over WebSocket; your OPC UA server stays at <code>opc.tcp://localhost:4840</code> (Python bridge only).</p>
+      <div class="row">
+        <label>Subscribe pattern</label>
+        <input type="text" id="topicPat" value="opc/#" spellcheck="false" />
+      </div>
+      <div class="row actions">
+        <button type="button" class="btn primary" id="btnConnect">Connect</button>
+        <button type="button" class="btn ghost" id="btnDisconnect">Disconnect</button>
+      </div>
+      <p class="hint">Ensure the embedded broker is running (TCP <code>1883</code>, WS <code>9001</code>).</p>
+    </section>
+
+    <section class="panel glass">
+      <h2>Chart</h2>
+      <div class="chart-wrap">
+        <canvas id="liveChart"></canvas>
+      </div>
+      <div class="row actions">
+        <button type="button" class="btn ghost" id="btnClearChart">Clear chart</button>
+        <button type="button" class="btn ghost" id="btnExportCsv">Export CSV</button>
+        <button type="button" class="btn ghost" id="btnExportJson">Export JSON</button>
+      </div>
+      <div class="row">
+        <label>History points per series (browser)</label>
+        <input type="number" id="maxPoints" min="50" max="50000" value="2000" />
+      </div>
+    </section>
+
+    <section class="panel glass">
+      <h2>Latest values</h2>
+      <div id="valueGrid" class="value-grid"></div>
+    </section>
+
+    <section class="panel glass">
+      <h2>Topic log</h2>
+      <pre id="logBox" class="log"></pre>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/mqtt@5.3.0/dist/mqtt.min.js"></script>
+  <script src="{{ url_for('static', filename='dashboard/dashboard.js') }}"></script>
+</body>
+</html>

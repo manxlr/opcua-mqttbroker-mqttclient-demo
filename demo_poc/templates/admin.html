@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bridge admin · OPC → MQTT</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard/theme.css') }}" />
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="wrap narrow">
+    <header class="hero glass">
+      <div>
+        <h1>Bridge admin</h1>
+        <p class="sub">OPC UA polling → MQTT (JSON on <code>prefix/&lt;signal id&gt;</code>)</p>
+      </div>
+      <a class="btn ghost" href="/">Dashboard</a>
+    </header>
+
+    <section class="panel glass">
+      <h2>OPC &amp; timing</h2>
+      <div class="row">
+        <label>OPC URL</label>
+        <input type="text" id="opcUrl" spellcheck="false" />
+      </div>
+      <div class="row">
+        <label>Poll interval (ms)</label>
+        <input type="number" id="pollMs" min="10" step="10" />
+      </div>
+      <div class="row">
+        <label>MQTT topic prefix</label>
+        <input type="text" id="topicPrefix" spellcheck="false" />
+      </div>
+      <div class="row two">
+        <div>
+          <label>MQTT host</label>
+          <input type="text" id="mqttHost" spellcheck="false" />
+        </div>
+        <div>
+          <label>MQTT port</label>
+          <input type="number" id="mqttPort" min="1" max="65535" />
+        </div>
+      </div>
+    </section>
+
+    <section class="panel glass">
+      <h2>Fetch variables from OPC (browse)</h2>
+      <p class="hint">Asks the PLC once for the list of items <em>inside</em> a folder. Paste a parent NodeId from UaExpert (or use the default GVL folder). Then add rows to the table below — no more hand-typing NodeIds for that folder.</p>
+      <div class="row">
+        <label>Parent folder NodeId</label>
+        <input type="text" id="browseParent" spellcheck="false" />
+      </div>
+      <div class="row actions">
+        <button type="button" class="btn primary" id="btnBrowse">Browse</button>
+        <button type="button" class="btn ghost" id="btnAddAllVars">Add all variables to signals</button>
+      </div>
+      <table class="sig-table" id="browseTable" hidden>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Class</th>
+            <th>Add</th>
+          </tr>
+        </thead>
+        <tbody id="browseBody"></tbody>
+      </table>
+      <pre id="browseErr" class="log small"></pre>
+    </section>
+
+    <section class="panel glass">
+      <h2>Signals</h2>
+      <p class="hint">Enable rows to publish. <code>id</code> becomes the MQTT subtopic.</p>
+      <table class="sig-table" id="sigTable">
+        <thead>
+          <tr>
+            <th>Enabled</th>
+            <th>id</th>
+            <th>NodeId</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="sigBody"></tbody>
+      </table>
+      <div class="row actions">
+        <button type="button" class="btn ghost" id="btnAddRow">Add row</button>
+      </div>
+    </section>
+
+    <section class="panel glass">
+      <h2>Test OPC read</h2>
+      <div class="row">
+        <label>NodeId to test</label>
+        <input type="text" id="testNode" spellcheck="false" />
+      </div>
+      <div class="row actions">
+        <button type="button" class="btn primary" id="btnTest">Read once</button>
+      </div>
+      <pre id="testOut" class="log small"></pre>
+    </section>
+
+    <section class="panel glass">
+      <h2>Save</h2>
+      <div class="row actions">
+        <button type="button" class="btn primary" id="btnSave">Save &amp; restart bridge</button>
+        <span id="saveMsg" class="msg"></span>
+      </div>
+      <pre id="bridgeStatus" class="log small"></pre>
+    </section>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const DEFAULT_BROWSE_PARENT =
+      'ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL_AxisData';
+
+    let lastBrowse = [];
+
+    async function loadConfig() {
+      const r = await fetch('/api/config');
+      const c = await r.json();
+      $('opcUrl').value = c.opc_url || '';
+      $('pollMs').value = c.poll_interval_ms ?? 2000;
+      $('topicPrefix').value = c.topic_prefix || 'opc';
+      $('mqttHost').value = c.mqtt_host || '127.0.0.1';
+      $('mqttPort').value = c.mqtt_port ?? 1883;
+      const body = $('sigBody');
+      body.innerHTML = '';
+      (c.signals || []).forEach((s) => addRow(s));
+      if (!body.children.length) addRow({ id: '', node_id: '', enabled: true });
+      if (!$('browseParent').value) $('browseParent').value = DEFAULT_BROWSE_PARENT;
+    }
+
+    function addRow(s) {
+      const tr = document.createElement('tr');
+      const td0 = document.createElement('td');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'en';
+      cb.checked = s.enabled !== false;
+      td0.appendChild(cb);
+      const td1 = document.createElement('td');
+      const i1 = document.createElement('input');
+      i1.type = 'text';
+      i1.className = 'sid';
+      i1.placeholder = 'lrAxisPosition';
+      i1.value = s.id || '';
+      td1.appendChild(i1);
+      const td2 = document.createElement('td');
+      const i2 = document.createElement('input');
+      i2.type = 'text';
+      i2.className = 'nid';
+      i2.placeholder = 'ns=4;s=...';
+      i2.value = s.node_id || '';
+      td2.appendChild(i2);
+      const td3 = document.createElement('td');
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'btn ghost sm btnDel';
+      del.textContent = '✕';
+      del.onclick = () => tr.remove();
+      td3.appendChild(del);
+      tr.appendChild(td0);
+      tr.appendChild(td1);
+      tr.appendChild(td2);
+      tr.appendChild(td3);
+      $('sigBody').appendChild(tr);
+    }
+
+    function gatherConfig() {
+      const signals = [];
+      $('sigBody').querySelectorAll('tr').forEach((tr) => {
+        const en = tr.querySelector('.en').checked;
+        const id = tr.querySelector('.sid').value.trim();
+        const node_id = tr.querySelector('.nid').value.trim();
+        if (!id || !node_id) return;
+        signals.push({ id, node_id, enabled: en });
+      });
+      return {
+        opc_url: $('opcUrl').value.trim(),
+        poll_interval_ms: parseInt($('pollMs').value, 10) || 2000,
+        topic_prefix: $('topicPrefix').value.trim() || 'opc',
+        mqtt_host: $('mqttHost').value.trim() || '127.0.0.1',
+        mqtt_port: parseInt($('mqttPort').value, 10) || 1883,
+        signals,
+      };
+    }
+
+    $('btnAddRow').onclick = () => addRow({ id: '', node_id: '', enabled: true });
+
+    $('btnBrowse').onclick = async () => {
+      $('browseErr').textContent = '';
+      const opc_url = $('opcUrl').value.trim();
+      const parent_node_id = $('browseParent').value.trim();
+      const r = await fetch('/api/opc/browse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ opc_url, parent_node_id }),
+      });
+      const j = await r.json();
+      if (!j.ok) {
+        $('browseErr').textContent = j.error || JSON.stringify(j);
+        $('browseTable').hidden = true;
+        lastBrowse = [];
+        return;
+      }
+      lastBrowse = j.children || [];
+      const tb = $('browseBody');
+      tb.innerHTML = '';
+      lastBrowse.forEach((row, i) => {
+        if (row.error) return;
+        const tr = document.createElement('tr');
+        const td0 = document.createElement('td');
+        td0.textContent = row.browse_name || '';
+        const td1 = document.createElement('td');
+        td1.textContent = row.node_class || '';
+        const td2 = document.createElement('td');
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn ghost sm';
+        b.textContent = row.is_variable ? 'Add' : '—';
+        b.disabled = !row.is_variable;
+        if (row.is_variable) {
+          b.onclick = () =>
+            addRow({ id: row.browse_name, node_id: row.node_id, enabled: true });
+        }
+        td2.appendChild(b);
+        tr.appendChild(td0);
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        tb.appendChild(tr);
+      });
+      $('browseTable').hidden = tb.children.length === 0;
+    };
+
+    $('btnAddAllVars').onclick = () => {
+      lastBrowse.forEach((row) => {
+        if (row.error || !row.is_variable) return;
+        addRow({ id: row.browse_name, node_id: row.node_id, enabled: true });
+      });
+    };
+
+    $('btnSave').onclick = async () => {
+      $('saveMsg').textContent = '';
+      const cfg = gatherConfig();
+      const r = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cfg),
+      });
+      const j = await r.json();
+      $('saveMsg').textContent = j.ok ? 'Saved.' : (j.error || 'Error');
+      pollStatus();
+    };
+
+    $('btnTest').onclick = async () => {
+      const opc_url = $('opcUrl').value.trim();
+      const node_id = $('testNode').value.trim() || gatherConfig().signals[0]?.node_id;
+      $('testOut').textContent = 'Reading…';
+      const r = await fetch('/api/opc/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ opc_url, node_id }),
+      });
+      const j = await r.json();
+      $('testOut').textContent = JSON.stringify(j, null, 2);
+    };
+
+    async function pollStatus() {
+      const r = await fetch('/api/bridge/status');
+      const j = await r.json();
+      $('bridgeStatus').textContent = JSON.stringify(j, null, 2);
+    }
+
+    loadConfig().then(pollStatus);
+    setInterval(pollStatus, 3000);
+  </script>
+</body>
+</html>
