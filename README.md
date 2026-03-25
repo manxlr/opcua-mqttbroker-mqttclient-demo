@@ -26,6 +26,22 @@ High-level flow:
 - **Flask dashboard** subscribes via MQTT over WebSocket and renders live charts + export
 - Optional **terminal/desktop MQTT clients** subscribe over MQTT TCP and plot/export locally
 
+### Flask Dashboard (Live Plot)
+<img src="Screenshots/OPC_UA_and_MQTT_BROKER_Dashboard.png" alt="Flask dashboard live plot" width="900" />
+*Flask dashboard live chart (subscribing to MQTT over WebSocket).*
+
+### Bridge Admin (OPC UA Browse + Config)
+<img src="Screenshots/OPC_UA_and_MQTT_BROKER_Admin_Page.png" alt="Bridge admin page" width="900" />
+*Bridge admin page for browsing OPC UA nodes and configuring which variables to publish.*
+
+### CoDeSys Symbol Configuration
+<img src="Screenshots/OPC_UA_Variables_Selection_CODESYS.png" alt="CoDeSys symbol configuration" width="900" />
+*CoDeSys symbol/configuration exposing variables (e.g., `GVL_AxisData`) for OPC UA access.*
+
+### Terminal MQTT Simulator
+<img src="Screenshots/MQTT_Client.png" alt="Terminal MQTT simulator" width="900" />
+*Terminal MQTT subscriber printing JSON payloads.*
+
 ## Default endpoints / topic format
 
 - OPC UA server (used by the Python bridge): `opc.tcp://localhost:4840`
